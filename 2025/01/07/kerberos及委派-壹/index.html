@@ -226,7 +226,7 @@
 <p><img src="https://picgo-1305609125.cos.ap-nanjing.myqcloud.com/windows-protocol/image-20250115234827541.png" alt="image-20250115234827541"></p>
 <p>上图对应使用的加密密钥</p>
 <blockquote>
-<p>蓝色：Client账户 NTLM HASH<br>黄色：Krbtgt账户 NTLM HASH<br>红色：服务账户的 NTLM HASH</p>
+<p>AS-REQ：用户 NTLM HASH<br>AS-REP：用户 NTLM HASH + Krbtgt账户 NTLM HASH<br>TGS-REQ：会话密钥 + Krbtgt账户 NTLM HASH<br>TGS-REP：服务账户的 NTLM HASH<br>AP-REQ：会话密钥 + 服务账户的 NTLM HASH</p>
 </blockquote>
 <p>大概流程为：</p>
 <ul>
@@ -236,11 +236,11 @@
 </li>
 <li><p>TGS_REQ：Client凭借TGT票据向KDC发起针对特定服务的TGS_REQ请求</p>
 </li>
-<li><p>TGS_REP：KDC使用krbtgt hash进行解密，如果结果正确，就返回用服务hash 加密的TGS票据(这一步不管用户有没有访问服务的权限，只要TGT正确，就返回TGS票据)</p>
+<li><p>TGS_REP：KDC使用krbtgt hash进行解密，如果结果正确，就返回用服务 hash加密 的ST票据(这一步不管用户有没有访问服务的权限，只要TGT正确，就返回ST票据)</p>
 </li>
-<li><p>AP_REQ：Client拿着TGS票据去请求服务</p>
+<li><p>AP_REQ：Client拿着ST票据去请求服务</p>
 </li>
-<li><p>AP_REP：服务使用自己的hash解密TGS票据。如果解密正确，就拿着PAC去KDC那边问Client有没有访问权限，域控解密PAC。获取Client的sid，以及所在的组，再根据该服务的ACL，判断Client是否有访问服务的权限。对应 6-7-8</p>
+<li><p>AP_REP：服务使用自己的hash解密ST票据。如果解密正确，就拿着PAC去KDC那边问Client有没有访问权限，域控解密PAC。获取Client的sid，以及所在的组，再根据该服务的ACL，判断Client是否有访问服务的权限。对应 6-7-8</p>
 </li>
 </ul>
 <p>小结为：</p>
@@ -377,8 +377,8 @@
 <ul>
 <li>sname：要请求的服务SPN</li>
 </ul>
-<h2 id="TGS-REP"><a href="#TGS-REP" class="headerlink" title="TGS_REP"></a>TGS_REP</h2><p>KDC使用 Krbtgt hash解密TGS_REQ消息以验证 TGT，然后返回 TGS，发送内容主要为</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">使用logon session key加密的 Service Session Key（服务会话密钥）</span><br><span class="line"></span><br><span class="line">使用服务账户HASH加密的TGS：</span><br><span class="line">	- 服务会话密钥</span><br><span class="line">    - 用户名</span><br><span class="line">    - TGS 的有效期</span><br><span class="line">    - 具有用户权限的 PAC ，由 KDC 签名</span><br></pre></td></tr></table></figure>
+<h2 id="TGS-REP"><a href="#TGS-REP" class="headerlink" title="TGS_REP"></a>TGS_REP</h2><p>KDC使用 Krbtgt hash解密TGS_REQ消息以验证 TGT，然后返回 ST，发送内容主要为</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">使用logon session key加密的 Service Session Key（服务会话密钥）</span><br><span class="line"></span><br><span class="line">使用服务账户HASH加密的TGS(ST)：</span><br><span class="line">	- 服务会话密钥</span><br><span class="line">    - 用户名</span><br><span class="line">    - TGS(ST) 的有效期</span><br><span class="line">    - 具有用户权限的 PAC ，由 KDC 签名</span><br></pre></td></tr></table></figure>
 
 <p><img src="https://picgo-1305609125.cos.ap-nanjing.myqcloud.com/windows-protocol/image-20250117000509862.png" alt="image-20250117000509862"></p>
 <p><img src="https://picgo-1305609125.cos.ap-nanjing.myqcloud.com/windows-protocol/TGS-REP.png"></p>
@@ -440,14 +440,14 @@
 <ol>
 <li>客户端请求TGT（AS-REQ）</li>
 <li>KDC返回TGT（AS-REP）</li>
-<li>客户端请求HTTP服务器的TGS（TGS-REQ）</li>
-<li>KDC返回TGS，但是 <strong>ok-as-delegate 标志设置为 TRUE，通知客户端所请求的服务已获得授权委托</strong></li>
+<li>客户端请求HTTP服务器的ST（TGS-REQ）</li>
+<li>KDC返回ST，但是 <strong>ok-as-delegate 标志设置为 TRUE，通知客户端所请求的服务已获得授权委托</strong></li>
 <li>客户端再次发起新的TGS-REQ请求，用于请求获取 <strong>额外的用户TGT</strong>，且要求该TGT开启 <strong>forwardable 和 forwarded</strong>，即 <code>可转发TGT</code></li>
 <li>KDC返回 <code>可转发TGT</code></li>
 <li>客户端向HTTP服务器发起AP-REQ请求，该请求包含ST 和 <code>可转发TGT</code> 票证</li>
-<li>HTTP服务器将 <code>可转发TGT</code> <strong>缓存在内存中</strong>，并使用该TGT向KDC请求FS的TGS</li>
-<li>KDC返回FS的TGS</li>
-<li>HTTP收到FS的TGS后，调用FS服务</li>
+<li>HTTP服务器将 <code>可转发TGT</code> <strong>缓存在内存中</strong>，并使用该TGT向KDC请求FS的ST</li>
+<li>KDC返回FS的ST</li>
+<li>HTTP收到FS的ST后，调用FS服务</li>
 <li>FS将结果返回给HTTP</li>
 <li>HTTP再将结果返回给客户端</li>
 </ol>
@@ -464,13 +464,13 @@
 <ol start="4">
 <li><p>Kerberos 认证</p>
 </li>
-<li><p>客户端向 Web 服务器发送 HTTP AP-REQ 消息，请求包括服务票证TGS</p>
+<li><p>客户端向 Web 服务器发送 HTTP AP-REQ 消息，请求包括服务票证ST</p>
 </li>
-<li><p>HTTP服务可以使用 S4U2Proxy 请求额外的服务票证。将用户TGS 票证附加到TGS-REQ结构的 <strong>附加票证 字段中</strong>。</p>
+<li><p>HTTP服务可以使用 S4U2Proxy 请求额外的服务票证。将用户ST票证附加到TGS-REQ结构的 <strong>附加票证 字段中</strong>。</p>
 </li>
-<li><p>KDC 将检查附加票证，验证其是否可转发，并通过检查 <strong>msDS-AllowedToDelegateTo</strong> 属性进一步验证 HTTP服务 是否可以委托给 FS服务。通过TGS-REP将FS的TGS返给HTTP服务</p>
+<li><p>KDC 将检查附加票证，验证其是否可转发，并通过检查 <strong>msDS-AllowedToDelegateTo</strong> 属性进一步验证 HTTP服务 是否可以委托给 FS服务。通过TGS-REP将FS的ST返给HTTP服务</p>
 </li>
-<li><p>HTTP收到FS的TGS后，调用FS服务</p>
+<li><p>HTTP收到FS的ST后，调用FS服务</p>
 </li>
 <li><p>FS将结果返回给HTTP</p>
 </li>
@@ -483,11 +483,11 @@
 <p><img src="https://picgo-1305609125.cos.ap-nanjing.myqcloud.com/windows-protocol/image-20250127003134415.png" alt="image-20250127003134415"></p>
 <p><img src="https://picgo-1305609125.cos.ap-nanjing.myqcloud.com/windows-protocol/image-20250127005949624.png" alt="image-20250127005949624"></p>
 <ol>
-<li>客户端向Web 服务器发送 HTTP 请求。由于应用程序不接受 Kerberos，因此将使用 NTLM 执行身份验证</li>
+<li>客户端向 Web 服务器发送 HTTP 请求。由于应用程序不接受 Kerberos，因此将使用 NTLM 执行身份验证</li>
 <li>由于目前没有客户的TGS，无法去获取FS的TGS，所以先使用S4U2Self来请求客户的TGS，存在特定于 S4U2Self 扩展的结构 <strong>pA-FOR-X509-USER</strong>和 <strong>pA-FOR-USER</strong>，其名称为要模拟的客户端</li>
 <li>KDC 将验证 DEV 是否配置了启用约束委派，返回代表自身的 <code>可转发TGS</code></li>
-<li>发起S4U2Proxy 请求FS服务的TGS</li>
-<li>返回FS服务的TGS</li>
+<li>发起S4U2Proxy 请求FS服务的ST</li>
+<li>返回FS服务的ST</li>
 <li>调用FS服务</li>
 <li>FS将结果返回给HTTP</li>
 <li>HTTP再将结果返回给客户端</li>
